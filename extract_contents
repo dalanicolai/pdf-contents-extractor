@@ -11,8 +11,9 @@ parser = argparse.ArgumentParser(description='Extract contents as text from a pd
 parser.add_argument('filename', help='a PDF-file and contents page range')
 parser.add_argument('firstpage', type=int, help='start pagenumber')
 parser.add_argument('lastpage', type=int, help='end pagenumber')
-parser.add_argument('--o', metavar='string', default='contents.txt', type=argparse.FileType('w'))
-parser.add_argument('--mag', metavar='float', default='2.0', type=float, help='optional magnification factor for better OCR')
+parser.add_argument('-o', metavar='STRING', default='contents.txt', type=argparse.FileType('w'))
+parser.add_argument('-m', '--mag', metavar='FLOAT', default='2.0', type=float, help='optional magnification factor for better OCR')
+parser.add_argument('-l', '--lang', metavar='LANG', help='optional tesseract language setting. Multiple languages can be passed with + (e.g. eng+ndl)')
 
 args = parser.parse_args()
 
@@ -26,7 +27,7 @@ for i in range(args.firstpage - 1, args.lastpage, 1):
     pix = page.getPixmap(mat)
     imdata = pix.getImageData()
     bytesim = BytesIO(imdata)
-    page_string = pytesseract.image_to_string(Image.open(bytesim), config='--psm 6')
+    page_string = pytesseract.image_to_string(Image.open(bytesim), lang=args.lang, config='--psm 6')
     args.o.write(page_string)
     
 args.o.close()
