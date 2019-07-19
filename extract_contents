@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 from io import BytesIO
 from PIL import Image
 
@@ -11,24 +12,51 @@ parser = argparse.ArgumentParser(description='Extract contents as text from a pd
 parser.add_argument('filename', help='a PDF-file and contents page range')
 parser.add_argument('firstpage', type=int, help='start pagenumber')
 parser.add_argument('lastpage', type=int, help='end pagenumber')
-parser.add_argument('-o', metavar='STRING', default='contents.txt', type=argparse.FileType('w'))
+parser.add_argument('-o', metavar='STRING', default='contents_ocr.txt', type=argparse.FileType('w'))
 parser.add_argument('-m', '--mag', metavar='FLOAT', default='2.0', type=float, help='optional magnification factor for better OCR')
 parser.add_argument('-l', '--lang', metavar='LANG', help='optional tesseract language setting. Multiple languages can be passed with + (e.g. eng+ndl)')
 
 args = parser.parse_args()
 
-doc = fitz.open(args.filename)
+if args.filename.endswith('pdf'):
+    os.system('pdftotext -f {} -l {} "{}" contents.txt'.format(args.firstpage, args.lastpage, args.filename))
+    doc = fitz.open(args.filename)
 
-mat = fitz.Matrix(args.mag, args.mag)
- 
-for i in range(args.firstpage - 1, args.lastpage, 1):
-    print(i)
-    page = doc[i]
-    pix = page.getPixmap(mat)
-    imdata = pix.getImageData()
-    bytesim = BytesIO(imdata)
-    page_string = pytesseract.image_to_string(Image.open(bytesim), lang=args.lang, config='--psm 6')
-    args.o.write(page_string)
-    
+    mat = fitz.Matrix(args.mag, args.mag)
+     
+    for i in range(args.firstpage - 1, args.lastpage, 1):
+        print(i)
+        page = doc[i]
+        pix = page.getPixmap(mat)
+        imdata = pix.getImageData()
+        bytesim = BytesIO(imdata)
+        page_string = pytesseract.image_to_string(Image.open(bytesim), lang=args.lang, config='--psm 6')
+        args.o.write(page_string)
+
+elif args.filename.endswith('djvu'):
+    os.system('djvutxt -page={}-{} "{}" contents.txt'.format(args.firstpage, args.lastpage, args.filename))
+    for i in range(args.firstpage, args.lastpage + 1, 1):
+        os.system('ddjvu -format=pnm -page={} "{}" page.pnm'.format(i, args.filename))
+        page_string = pytesseract.image_to_string(Image.open('page.pnm'), lang=args.lang, config='--psm 6')
+        args.o.write(page_string)
+    os.remove('page.pnm')
+
+else:
+    print('file must be pdf or djvu')
+
+with open('contents.txt') as myfile: 
+    try:
+        head = [next(myfile) for x in range(10)]
+    except:
+        head = ''
+    print('\u001b[33mCONTENTS OF contents.txt \n' + ''.join(head) + '------\n\n')
+
 args.o.close()
+
+with open('contents_ocr.txt') as myfile: 
+    try:
+        head = [next(myfile) for x in range(10)]
+    except:
+        head = ''
+    print('\u001b[32mCONTENTS OF contents_ocr.txt \n\n' + ''.join(head) + '------')
 
