@@ -49,14 +49,16 @@ if args.filename.endswith('pdf'):
         sys.exit()
     else:
         command = shlex.split('pdftotext -f {} -l {} -layout "{}" -'.format(args.firstpage, args.lastpage, args.filename))
-        text = subprocess.check_output(command).decode().splitlines()
-        print(text)
+        text = subprocess.check_output(command).splitlines()
         romans = set('ivxIVX')
         with open('contents.txt', 'w+') as f:
             f.write(' '.join(['Contents', str(args.firstpage), '\n']))
             for i in text:
                 # if not romans.issuperset(j.strip()) and not ('contents' in j.lower() or '\x0c' in j):
-                f.write(i + '\n')
+                try:
+                    f.write(i.decode() + '\n')
+                except UnicodeDecodeError:
+                    pass
         # os.system('pdftotext -f {} -l {} "{}" contents.txt'.format(args.firstpage, args.lastpage, args.filename))
         # os.system('mutool draw -o contents.txt "{}" {}-{}'.format(args.filename, args.firstpage, args.lastpage))
         doc = fitz.open(args.filename)
