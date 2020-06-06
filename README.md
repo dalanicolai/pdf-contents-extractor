@@ -16,6 +16,3 @@ for extra options and help type: extract_contents -h
 
 The contents can be further edited in a text-editor and added to the pdf-file with handyoutliner (http://handyoutlinerfo.sourceforge.net/)
 
-#### Note on djvu
-
-For djvu files the command djvutxt, on linux, usually works great already (if OCR layer available). Example usage: `djvutxt -page=3-6 example.pdf contents.txt` 

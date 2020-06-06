@@ -1,9 +1,12 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 import argparse
 import os
+import sys
 from io import BytesIO
 from PIL import Image
+import shlex
+import subprocess
 
 import fitz
 import pytesseract
@@ -12,39 +15,107 @@ parser = argparse.ArgumentParser(description='Extract contents as text from a pd
 parser.add_argument('filename', help='a PDF-file and contents page range')
 parser.add_argument('firstpage', type=int, help='start pagenumber')
 parser.add_argument('lastpage', type=int, help='end pagenumber')
-parser.add_argument('-o', metavar='STRING', default='contents_ocr.txt', type=argparse.FileType('w'))
-parser.add_argument('-m', '--mag', metavar='FLOAT', default='2.0', type=float, help='optional magnification factor for better OCR')
-parser.add_argument('-l', '--lang', metavar='LANG', help='optional tesseract language setting. Multiple languages can be passed with + (e.g. eng+ndl)')
+parser.add_argument('-o', metavar='STRING', default = 'contents_ocr.txt', type=argparse.FileType('w'))
+parser.add_argument('-p', '--psm', metavar='INT', default=6, type=int, help='optional tesseract psm setting (default 6). Try 1 for multicolumn contents')
+parser.add_argument('-m', '--mag', metavar='FLOAT', default='2.0', type=float, help='optional magnification factor for better OCR (default=2.0)')
+parser.add_argument('-r', '--res', metavar='INT', default='300', type=int, help='optional resolution for better OCR (default=300 and is recommended minimum)')
+parser.add_argument('-l', '--lang', metavar='LANG', help='optional tesseract language setting. Multiple languages can be passed with + (e.g. eng+nld)')
+parser.add_argument('-f', action='store_true', help='force extraction of contents in case TOC included')
+parser.add_argument('-e', nargs='?', choices=['fitz', 'nofitz'], const='fitz', help="extract included TOC using the fitz library. Uses mutool if 'nofitz' argument is given. ")
+parser.add_argument('-w', action='store_true', help='use mathematica instead of tesseract')
 
 args = parser.parse_args()
 
 if args.filename.endswith('pdf'):
-    os.system('pdftotext -f {} -l {} "{}" contents.txt'.format(args.firstpage, args.lastpage, args.filename))
-    doc = fitz.open(args.filename)
+    outline = os.popen('mutool show "{}" outline'.format(args.filename))
+    if args.e == 'fitz':
+        doc = fitz.open(args.filename)
+        outline = doc.getToC()
+        print(outline)
+        with open('toc.txt', 'w+') as f:
+            for i in outline:
+                f.write((i[0]-1) * '\t' + i[1] + ' ' + str(i[2]) + '\n')
+        sys.exit()
+    elif args.e == 'nofitz':
+        outline = os.popen('mutool show "{}" outline'.format(args.filename))
+        with open('toc.txt', 'w+') as f:
+            for i in outline:
+                line = i.split('\t')
+                f.write(line[-2][1:-1] + ' ' + line[-1].split(',')[0][1:]+'\n')
+                print(line[-2][1:-1] + ' ' + line[-1].split(',')[0][1:]+'\n')
+            sys.exit()
+    elif outline.read() and not args.f:
+        print("document already includes TOC. Use -f flag to force TOC extraction")
+        sys.exit()
+    else:
+        command = shlex.split('pdftotext -f {} -l {} -layout "{}" -'.format(args.firstpage, args.lastpage, args.filename))
+        text = subprocess.check_output(command).decode().splitlines()
+        print(text)
+        romans = set('ivxIVX')
+        with open('contents.txt', 'w+') as f:
+            f.write(' '.join(['Contents', str(args.firstpage), '\n']))
+            for i in text:
+                # if not romans.issuperset(j.strip()) and not ('contents' in j.lower() or '\x0c' in j):
+                f.write(i + '\n')
+        # os.system('pdftotext -f {} -l {} "{}" contents.txt'.format(args.firstpage, args.lastpage, args.filename))
+        # os.system('mutool draw -o contents.txt "{}" {}-{}'.format(args.filename, args.firstpage, args.lastpage))
+        doc = fitz.open(args.filename)
 
-    mat = fitz.Matrix(args.mag, args.mag)
-     
-    for i in range(args.firstpage - 1, args.lastpage, 1):
-        print(i)
-        page = doc[i]
-        pix = page.getPixmap(mat)
-        imdata = pix.getImageData()
-        bytesim = BytesIO(imdata)
-        page_string = pytesseract.image_to_string(Image.open(bytesim), lang=args.lang, config='--psm 6')
-        args.o.write(page_string)
+        mat = fitz.Matrix(args.mag, args.mag)
+
+        args.o.write('Contents {}\n'.format(args.firstpage))
+        if args.w:
+            for i in range(args.firstpage, args.lastpage + 1):
+                print(i)
+                command = shlex.split('pdftoppm -f {} -singlefile -r {} "{}" out'.format(i, args.res, args.filename))
+                subprocess.run(command)
+                command = shlex.split('ocr.wls out.ppm')
+                bytetext = subprocess.check_output(command)
+                stringlist = bytetext.decode().splitlines()
+                for j in stringlist:
+                    if not romans.issuperset(j.strip()) and not ('contents' in j.lower() or '\x0c' in j):
+                        args.o.write(j +'\n')
+            os.remove('out.ppm')
+        else:
+            for i in range(args.firstpage - 1, args.lastpage, 1):
+                print(i)
+                page = doc[i]
+                pix = page.getPixmap(mat)
+                imdata = pix.getImageData()
+                bytesim = BytesIO(imdata)
+                page_string = pytesseract.image_to_string(Image.open(bytesim), lang=args.lang, config='--psm {}'.format(args.psm)).split('\n')
+                if len(page_string[0]) < 4 or 'content' in page_string[0].lower():
+                    page_string = page_string[1:]
+                if len(page_string[-1]) < 4 or 'centsontent' in page_string[-1].lower():
+                    page_string = page_string[:-1]
+                for i in page_string:
+                    args.o.write(i + '\n')
 
 elif args.filename.endswith('djvu'):
-    os.system('djvutxt -page={}-{} "{}" contents.txt'.format(args.firstpage, args.lastpage, args.filename))
-    for i in range(args.firstpage, args.lastpage + 1, 1):
-        os.system('ddjvu -format=pnm -page={} "{}" page.pnm'.format(i, args.filename))
-        page_string = pytesseract.image_to_string(Image.open('page.pnm'), lang=args.lang, config='--psm 6')
-        args.o.write(page_string)
-    os.remove('page.pnm')
+    outline = os.popen('djvused "{}" -e print-outline'.format(args.filename))
+    if args.e:
+        outline = os.popen('djvused "{}" -e print-outline'.format(args.filename)).read().splitlines()
+        lines = ['{} {}'.format(outline[i].split('"')[1], outline[i+1].split('"')[1][1:]) for i in range(1,len(outline),2)]
+        with open('toc.txt', 'w+') as f:
+            for i in lines:
+                f.write(i + '\n')
+        sys.exit()
+    elif outline.read() and not args.f:
+        print("document already includes TOC. Use -f flag to force TOC extraction")
+        sys.exit()
+    else:
+        os.system('djvutxt -page={}-{} "{}" contents.txt'.format(args.firstpage, args.lastpage, args.filename))
+        for i in range(args.firstpage, args.lastpage + 1, 1):
+            os.system('ddjvu -format=pnm -page={} "{}" page.pnm'.format(i, args.filename))
+            print(i)
+            page_string = pytesseract.image_to_string(Image.open('page.pnm'), lang=args.lang, config='--psm 6')
+            args.o.write(page_string)
+        os.remove('page.pnm')
 
 else:
     print('file must be pdf or djvu')
 
-with open('contents.txt') as myfile: 
+with open('contents.txt') as myfile:
     try:
         head = [next(myfile) for x in range(10)]
     except:
@@ -53,10 +124,9 @@ with open('contents.txt') as myfile:
 
 args.o.close()
 
-with open('contents_ocr.txt') as myfile: 
+with open(args.o.name) as myfile:
     try:
         head = [next(myfile) for x in range(10)]
     except:
         head = ''
     print('\u001b[32mCONTENTS OF contents_ocr.txt \n\n' + ''.join(head) + '------')
-
