@@ -1,5 +1,5 @@
 # pdf-contents-extractor 
-Extract contents as text from a pdf- or djvu-document (for use in e.g. handyoutliner)
+Extract Table of Contents (TOC) as text from a pdf- or djvu-document (for use in e.g. handyoutliner)
 
 requires:
 * for PDF, pytesseract and PyMuPDF (both can be easily installed with pip)
