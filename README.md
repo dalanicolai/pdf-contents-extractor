@@ -14,5 +14,7 @@ The default tesseract language is english. Another language(s) can be set with -
 
 for extra options and help type: extract_contents -h
 
+There is a cleanup_contents.py script also which might help cleanup the contents_ocr.txt file, it is handy sometimes but far from perfect. To use it, just run the script in the directory containing the contents_ocr.txt file.
+
 The script creates two files, `contents.txt` and `contents_ocr.txt`. The first file contains contents extracted from the text layer if available (this can be also extracted using handyoutliner (http://handyoutlinerfo.sourceforge.net/)). The second file contains contents extracted using the tesseract OCR engine. The contents can be further edited in a text-editor, although to reduce the work it is recommended to check how well the contents is parsed by [handyoutliner](http://handyoutlinerfo.sourceforge.net/) first. Finally the pdf-file can be added to the PDF/DJVU file with [handyoutliner](http://handyoutlinerfo.sourceforge.net/). 
 
