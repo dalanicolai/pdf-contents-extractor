@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+
+import re
+
+f = open("contents_clean.txt", "w+")
+
+results = []
+with open('contents_ocr.txt') as inputfile: 
+    for line in inputfile: 
+        results.append(line.strip())
+    
+for line in results:
+    if not line:
+        continue
+    words = line.split() 
+    #print('w =', words)
+    try:
+        if words[0][-1]=='.':
+            prim = words[0][:-1]
+        else:    
+            prim = re.sub(r'_','', words[0])
+        if len(words) == 1:
+            ter = ''
+        else:
+            ter = words[-1]        
+    except AttributeError: 
+        print('FOUTJE')	
+    if words: 
+        midline = ' '.join(words[1:-1])
+    else:
+        continue
+    #print('m =',midline) 
+    try: 
+        sec = re.search(r'[\w\s-]+[A-z]', midline).group() 
+    except AttributeError: 
+        sec = '' 
+#    print(prim, sec, ter) 
+    f.write("{} {} {}\n".format(prim, sec, ter))
+
+f.close()
