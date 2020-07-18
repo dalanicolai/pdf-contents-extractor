@@ -1,3 +1,14 @@
+# (Spac)Emacs toc-mode announcement
+A nicer alternative, than the combination of this package with handoutliner, for
+managing Table of Contents is the new
+[toc-mode](https://github.com/dalanicolai/toc-mode) (Spac)Emacs package.
+Installing [Spacemacs](https://www.spacemacs.org/) with the toc-mode package is
+not more work than installing the combination of
+[document_contents_creator](https://github.com/dalanicolai/document_contents_extractor)
+and handyoutliner. On the other hand, installing Emacs or (for people who, like
+me, enjoy Vim key-bindings) [Spacemacs](https://www.spacemacs.org/) is, for
+countless reasons, strongly recommended to anybody who enjoys using a computer.
+
 # pdf-contents-extractor 
 Extract Table of Contents (TOC) as text from a pdf- or djvu-document (for use in e.g. handyoutliner)
 
