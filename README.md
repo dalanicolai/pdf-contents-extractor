@@ -5,7 +5,7 @@ managing Table of Contents is the new
 Installing [Spacemacs](https://www.spacemacs.org/) with the toc-mode package is
 not more work than installing the combination of
 [document_contents_creator](https://github.com/dalanicolai/document_contents_extractor)
-and handyoutliner. On the other hand, installing Emacs or (for people who, like
+and handyoutliner. Moreover, installing Emacs or (for people who, like
 me, enjoy Vim key-bindings) [Spacemacs](https://www.spacemacs.org/) is, for
 countless reasons, strongly recommended to anybody who enjoys using a computer.
 
