@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description='Extract contents as text from a pd
 parser.add_argument('filename', help='a PDF-file and contents page range')
 parser.add_argument('firstpage', type=int, help='start pagenumber')
 parser.add_argument('lastpage', type=int, help='end pagenumber')
-parser.add_argument('-o', metavar='STRING', default = 'contents_ocr.txt', type=argparse.FileType('w'))
+parser.add_argument('-o', metavar='STRING', default = 'contents_ocr.txt', type=argparse.FileType('w', encoding="utf-8"))
 parser.add_argument('-p', '--psm', metavar='INT', default=6, type=int, help='optional tesseract psm setting (default 6). Try 1 for multicolumn contents')
 parser.add_argument('-m', '--mag', metavar='FLOAT', default='2.0', type=float, help='optional magnification factor for better OCR (default=2.0)')
 parser.add_argument('-r', '--res', metavar='INT', default='300', type=int, help='optional resolution for better OCR (default=300 and is recommended minimum)')
@@ -82,7 +82,7 @@ if args.filename.endswith('pdf'):
             for i in range(args.firstpage - 1, args.lastpage, 1):
                 print(i)
                 page = doc[i]
-                pix = page.getPixmap(mat)
+                pix = page.get_pixmap(matrix=mat)
                 imdata = pix.getImageData()
                 bytesim = BytesIO(imdata)
                 page_string = pytesseract.image_to_string(Image.open(bytesim), lang=args.lang, config='--psm {}'.format(args.psm)).split('\n')
