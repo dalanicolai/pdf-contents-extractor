@@ -1,0 +1,36 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "extract_contents",
+            "type": "python",
+            "request": "launch",
+            "program": "extract_contents",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                // "c:/temp/test_content_extractor/dk_maths.pdf",
+                // "5", // should be physical page number (the larger one)
+                // "7", // the real last page,  no need to add 1
+                "c:/temp/test_content_extractor/12092235.pdf",
+                "1",
+                "2",
+                "-f",
+                "-l",
+                "chi_sim",
+                // "-p",
+                // "1"
+            ]
+        }
+    ]
+}
